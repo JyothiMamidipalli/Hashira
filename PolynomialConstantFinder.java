@@ -5,7 +5,6 @@ import org.json.JSONObject;
 
 public class PolynomialConstantFinder {
 
-    // Helper class for exact rationals
     static class BigFraction {
         BigInteger num, den;
 
@@ -42,7 +41,6 @@ public class PolynomialConstantFinder {
         }
     }
 
-    // Decode string value in given base to BigInteger
     static BigInteger decode(String value, int base) {
         BigInteger result = BigInteger.ZERO;
         BigInteger b = BigInteger.valueOf(base);
@@ -56,14 +54,11 @@ public class PolynomialConstantFinder {
         }
         return result;
     }
-
-    // Solve linear system Ax = y for polynomial coefficients
     static BigFraction[] solveVandermonde(BigInteger[] xs, BigInteger[] ys) {
         int n = xs.length;
         BigFraction[][] A = new BigFraction[n][n];
         BigFraction[] Y = new BigFraction[n];
 
-        // Build Vandermonde matrix
         for (int i = 0; i < n; i++) {
             BigInteger pow = BigInteger.ONE;
             for (int j = n - 1; j >= 0; j--) {
@@ -71,8 +66,7 @@ public class PolynomialConstantFinder {
             }
             Y[i] = BigFraction.fromInt(ys[i]);
         }
-
-        // Gaussian elimination
+     
         for (int col = 0; col < n; col++) {
             // Find pivot
             int pivot = col;
@@ -84,12 +78,11 @@ public class PolynomialConstantFinder {
                 BigFraction t = Y[col]; Y[col] = Y[pivot]; Y[pivot] = t;
             }
 
-            // Normalize pivot row
-            BigFraction inv = new BigFraction(A[col][col].den, A[col][col].num); // reciprocal
+
+            BigFraction inv = new BigFraction(A[col][col].den, A[col][col].num); 
             for (int j = col; j < n; j++) A[col][j] = A[col][j].multiply(inv);
             Y[col] = Y[col].multiply(inv);
 
-            // Eliminate below
             for (int i = col + 1; i < n; i++) {
                 BigFraction factor = A[i][col];
                 if (factor.num.equals(BigInteger.ZERO)) continue;
@@ -99,7 +92,6 @@ public class PolynomialConstantFinder {
             }
         }
 
-        // Back substitution
         BigFraction[] coeff = new BigFraction[n];
         for (int i = n - 1; i >= 0; i--) {
             BigFraction sum = BigFraction.fromInt(BigInteger.ZERO);
@@ -124,7 +116,6 @@ public class PolynomialConstantFinder {
         List<Integer> xs = new ArrayList<>();
         List<BigInteger> ys = new ArrayList<>();
 
-        // Read & decode all roots
         for (String key : obj.keySet()) {
             if (key.equals("keys")) continue;
             int x = Integer.parseInt(key);
@@ -135,8 +126,6 @@ public class PolynomialConstantFinder {
             xs.add(x);
             ys.add(y);
         }
-
-        // Sort by x and pick first k roots
         List<Integer> sortedIdx = new ArrayList<>();
         for (int i = 0; i < xs.size(); i++) sortedIdx.add(i);
         sortedIdx.sort(Comparator.comparingInt(xs::get));
@@ -147,11 +136,7 @@ public class PolynomialConstantFinder {
             selX[i] = BigInteger.valueOf(xs.get(sortedIdx.get(i)));
             selY[i] = ys.get(sortedIdx.get(i));
         }
-
-        // Solve
         BigFraction[] coeffs = solveVandermonde(selX, selY);
-
-        // Constant term is last coefficient (a0)
         BigFraction cFrac = coeffs[coeffs.length - 1];
         if (!cFrac.den.equals(BigInteger.ONE)) {
             System.out.println("c is not an integer: " + cFrac.num + "/" + cFrac.den);
